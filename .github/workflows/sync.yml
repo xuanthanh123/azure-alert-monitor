@@ -1,8 +1,8 @@
-name: Sync SharePoint CSV to GitHub JSON
+name: Sync Excel to JSON (Real-time)
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '*/3 * * * *'  # Mỗi 3 phút
   workflow_dispatch:
 
 jobs:
@@ -12,11 +12,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download CSV
+      - name: Download Excel as CSV (force fresh)
         run: |
-          curl -L "https://truecommerceedi-my.sharepoint.com/:t:/g/personal/thanh_nguyen_truecommerce_com/EX6NkmCE1m5Kv5aIxThpxBQBAynKfSFYOWC-P9KwsU0IhQ?format=csv" -o status.csv
+          curl -L \
+               -H "Accept: text/csv" \
+               "https://truecommerceedi-my.sharepoint.com/:x:/g/personal/thanh_nguyen_truecommerce_com/EQb32huhvRpKrsGIFZD_V8UBpEydu9Y90vAGBL4vBNNoZQ?download=1" \
+               -o status.csv
 
-      - name: Parse CSV to JSON
+      - name: Parse to JSON
         run: |
           STATUS=$(tail -n 1 status.csv | tr -d '\r')
           echo "{\"status\": $STATUS}" > status.json
@@ -26,5 +29,5 @@ jobs:
           git config user.name "Auto Sync"
           git config user.email "sync@github.com"
           git add status.json
-          git diff --quiet && git diff --staged --quiet || git commit -m "Sync from SharePoint"
+          git diff --quiet && git diff --staged --quiet || git commit -m "Update status: $STATUS"
           git push
