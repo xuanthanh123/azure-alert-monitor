@@ -1,18 +1,22 @@
-name: Sync Excel to JSON (Real-time)
+name: Sync Excel to JSON
 
 on:
   schedule:
-    - cron: '*/3 * * * *'  # Mỗi 3 phút
+    - cron: '*/3 * * * *'
   workflow_dispatch:
 
 jobs:
   sync:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Bắt buộc để push
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT_TOKEN }}  # Dùng PAT
 
-      - name: Download Excel as CSV (force fresh)
+      - name: Download Excel as CSV
         run: |
           curl -L \
                -H "Accept: text/csv" \
@@ -30,4 +34,5 @@ jobs:
           git config user.email "sync@github.com"
           git add status.json
           git diff --quiet && git diff --staged --quiet || git commit -m "Update status: $STATUS"
+          git remote set-url origin https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git
           git push
